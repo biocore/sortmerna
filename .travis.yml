@@ -15,20 +15,22 @@ before_install:
   - conda update --yes conda
   - conda config --add channels https://conda.anaconda.org/biobuilds
 install:
-  - conda create --yes -n env_name python=2.7 numpy scipy zlib autoconf-update
+  - conda create --yes -n env_name python=3.5 numpy scipy zlib autoconf-update
   - source activate env_name
-  - pip install scikit-bio==0.2.3
+  - pip install scikit-bio==0.5.0
 script:
   # configure and test without zlib
   - bash ./autogen.sh
-  - ./configure --without-zlib
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./configure --without-zlib LDFLAGS='-L/usr/lib64'; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./configure --without-zlib; fi
   - make
   - export PATH="$PWD:$PATH"; cd tests
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then python ./test_sortmerna.py; fi
+  - python ./test_sortmerna.py; fi
   # configure and test with zlib
   - cd ../; make clean
-  - ./configure --with-zlib
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./configure --with-zlib LDFLAGS='-L/usr/lib64'; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./configure --with-zlib; fi
   - make
   - cd ./tests
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then python ./test_sortmerna.py; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then python ./test_sortmerna_zlib.py; fi
+  - python ./test_sortmerna.py
+  - python ./test_sortmerna_zlib.py
