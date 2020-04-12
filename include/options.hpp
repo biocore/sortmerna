@@ -41,6 +41,7 @@ OPT_PAIRED = "paired",
 OPT_PAIRED_IN = "paired_in",
 OPT_PAIRED_OUT = "paired_out",
 OPT_OUT2 = "out2",
+OPT_ZIP = "zip",
 OPT_MATCH = "match",
 OPT_MISMATCH = "mismatch",
 OPT_GAP_OPEN = "gap_open",
@@ -203,6 +204,10 @@ help_out2 =
 	"                                            Must be used with '" + OPT_FASTX + "'.\n"
 	"                                            Ignored without either of '" + OPT_PAIRED_IN + "' |\n"
 	"                                            '" + OPT_PAIRED_OUT + "' | '" + OPT_PAIRED + "' | two '" + OPT_READS + "'\n",
+help_zip =
+	"Compress output FASTA files.                            False\n"
+	"                                            Output format is '.gz'.\n"
+	"                                            Ignored without '" + OPT_FASTX + "'.\n",
 help_match = 
 	"SW score (positive integer) for a match.                2\n",
 help_mismatch = 
@@ -361,7 +366,8 @@ public:
 	//    output control
 	bool is_paired_in = false; // OPT_PAIRED_IN was selected i.e. both paired-end reads go in 'aligned' fasta/q file. Only Fasta/q and De-novo reporting.
 	bool is_paired_out = false; // '--paired_out' both paired-end reads go in 'other' fasta/q file. Only Fasta/q and De-novo reporting.
-	bool is_out2 = false; // 20200127 output paired reads into separate files. Issue 202
+	bool is_out2 = false; // output paired reads into separate files. Issue 202. 20200127
+	bool is_zip = false; // output compressed files. Issue 175. 20200410 
 	bool is_de_novo_otu = false; // OPT_DE_NOVO_OTU: FASTA/FASTQ file for reads matching database < %%id (set using --id) and < %%cov (set using --coverage)
 	bool is_log = true; // OPT_LOG was selected i.e. output overall statistics. TODO: remove this option, always generate.
 	bool is_print_all_reads = false; // '--print_all_reads' output null alignment strings for non-aligned reads to SAM and/or BLAST tabular files
@@ -467,6 +473,7 @@ private:
 	void opt_paired_in(const std::string &val);
 	void opt_paired_out(const std::string &val);
 	void opt_out2(const std::string& val);
+	void opt_zip(const std::string& val);
 	void opt_match(const std::string &val);
 	void opt_mismatch(const std::string &val);
 	void opt_gap_open(const std::string &val);
@@ -532,7 +539,7 @@ private:
 	std::multimap<std::string, std::string> mopt;
 
 	// OPTIONS Map - specifies all possible options
-	const std::array<opt_6_tuple, 48> options = {
+	const std::array<opt_6_tuple, 49> options = {
 		std::make_tuple(OPT_REF,            "PATH",        COMMON,      true,  help_ref, &Runopts::opt_ref),
 		std::make_tuple(OPT_READS,          "PATH",        COMMON,      true,  help_reads, &Runopts::opt_reads),
 		std::make_tuple(OPT_WORKDIR,        "PATH",        COMMON,      false, help_workdir, &Runopts::opt_workdir),
@@ -552,6 +559,7 @@ private:
 		std::make_tuple(OPT_PAIRED_IN,      "BOOL",        COMMON,      false, help_paired_in, &Runopts::opt_paired_in),
 		std::make_tuple(OPT_PAIRED_OUT,     "BOOL",        COMMON,      false, help_paired_out, &Runopts::opt_paired_out),
 		std::make_tuple(OPT_OUT2,           "BOOL",        COMMON,      false, help_out2, &Runopts::opt_out2),
+		std::make_tuple(OPT_ZIP,            "BOOL",        COMMON,      false, help_zip, &Runopts::opt_zip),
 		std::make_tuple(OPT_MATCH,          "INT",         COMMON,      false, help_match, &Runopts::opt_match),
 		std::make_tuple(OPT_MISMATCH,       "INT",         COMMON,      false, help_mismatch, &Runopts::opt_mismatch),
 		std::make_tuple(OPT_GAP_OPEN,       "INT",         COMMON,      false, help_gap_open, &Runopts::opt_gap_open),

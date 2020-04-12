@@ -125,7 +125,8 @@ void Runopts::opt_reads(const std::string &file)
 
 	bool gzipped = "gz" == file.substr(file.rfind('.') + 1); // file ends with 'gz'
 	std::string line;
-	Gzip gzip(gzipped);
+	Gzip gzip;
+	gzip.init(gzipped, true);
 	int stat = gzip.getline(ifs, line);
 	if (RL_OK == stat)
 	{
@@ -135,7 +136,8 @@ void Runopts::opt_reads(const std::string &file)
 	{
 		// try reading as gzipped even though file has no 'gz' extension
 		gzip.~Gzip(); // destroy
-		Gzip gzip(true);
+		Gzip gzip;
+		gzip.init(true, true);
 		stat = gzip.getline(ifs, line);
 		if (RL_OK == stat) is_gz = true;
 	}
@@ -354,7 +356,14 @@ void Runopts::opt_paired_out(const std::string &val)
  */
 void Runopts::opt_out2(const std::string& val)
 {
+	if (val.size() > 0)
+		std::cout << STAMP << "'" << OPT_ZIP << "' is boolean. Ignoring value: " << val << std::endl;
 	is_out2 = true;
+} // ~Runopts::opt_out2
+
+void Runopts::opt_zip(const std::string& val)
+{
+	is_zip = true;
 } // ~Runopts::opt_out2
 
 void Runopts::opt_match(const std::string &val)
