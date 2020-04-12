@@ -87,6 +87,8 @@ void Output::init(Runopts & opts, Readstats & readstats)
 			sfx += "_" + summary.pid_str;
 		}
 		sfx += "." + readstats.suffix;
+		if (opts.is_zip)
+			sfx += ".gz";
 		size_t nfiles = opts.is_out2 ? 2 : 1;
 		aligned_os.resize(nfiles);
 		aligned_f.resize(nfiles);
@@ -108,6 +110,10 @@ void Output::init(Runopts & opts, Readstats & readstats)
 				exit(EXIT_FAILURE);
 			}
 		}
+
+		if (opts.is_zip) {
+			gzip.init(true, false, (size_t)readstats.max_read_len * 4, (size_t)readstats.max_read_len * 2);
+		}
 	}
 
 	if (opts.is_other && opts.is_fastx)
@@ -118,6 +124,8 @@ void Output::init(Runopts & opts, Readstats & readstats)
 			sfx += "_" + summary.pid_str;
 		}
 		sfx += "." + readstats.suffix;
+		if (opts.is_zip)
+			sfx += ".gz";
 		size_t nfiles = opts.is_out2 ? 2 : 1;
 		other_os.resize(nfiles);
 		other_f.resize(nfiles);
@@ -662,10 +670,10 @@ void Output::report_fasta(Runopts & opts, std::vector<Read> & reads)
 					for (size_t i = 0; i < reads.size(); ++i)
 					{
 						if (opts.is_out2) {
-							write_a_read(aligned_os[i], reads[i]); // fwd and rev go into different files
+							write_a_read(aligned_os[i], reads[i], opts.is_zip); // fwd and rev go into different files
 						}
 						else {
-							write_a_read(aligned_os[0], reads[i]); // fwd and rev go into the same file
+							write_a_read(aligned_os[0], reads[i], opts.is_zip); // fwd and rev go into the same file
 						}
 					}
 				}
@@ -673,10 +681,10 @@ void Output::report_fasta(Runopts & opts, std::vector<Read> & reads)
 					for (size_t i = 0; i < reads.size(); ++i)
 					{
 						if (opts.is_out2) {
-							write_a_read(other_os[i], reads[i]); // fwd and rev go into different files
+							write_a_read(other_os[i], reads[i], opts.is_zip); // fwd and rev go into different files
 						}
 						else {
-							write_a_read(other_os[0], reads[i]); // fwd and rev go into the same file
+							write_a_read(other_os[0], reads[i], opts.is_zip); // fwd and rev go into the same file
 						}
 					}
 				}
@@ -687,10 +695,10 @@ void Output::report_fasta(Runopts & opts, std::vector<Read> & reads)
 					for (size_t i = 0; i < reads.size(); ++i)
 					{
 						if (opts.is_out2) {
-							write_a_read(aligned_os[i], reads[i]); // fwd and rev go into different files
+							write_a_read(aligned_os[i], reads[i], opts.is_zip); // fwd and rev go into different files
 						}
 						else {
-							write_a_read(aligned_os[0], reads[i]); // fwd and rev go into the same file
+							write_a_read(aligned_os[0], reads[i], opts.is_zip); // fwd and rev go into the same file
 						}
 					}
 				}
@@ -699,10 +707,10 @@ void Output::report_fasta(Runopts & opts, std::vector<Read> & reads)
 					for (size_t i = 0; i < reads.size(); ++i)
 					{
 						if (opts.is_out2) {
-							write_a_read(other_os[i], reads[i]); // fwd and rev go into different files
+							write_a_read(other_os[i], reads[i], opts.is_zip); // fwd and rev go into different files
 						}
 						else {
-							write_a_read(other_os[0], reads[i]); // fwd and rev go into the same file
+							write_a_read(other_os[0], reads[i], opts.is_zip); // fwd and rev go into the same file
 						}
 					}
 				}
@@ -714,18 +722,18 @@ void Output::report_fasta(Runopts & opts, std::vector<Read> & reads)
 				{
 					if (reads[i].is_hit) {
 						if (opts.is_out2) {
-							write_a_read(aligned_os[i], reads[i]); // fwd and rev go into different files
+							write_a_read(aligned_os[i], reads[i], opts.is_zip); // fwd and rev go into different files
 						}
 						else {
-							write_a_read(aligned_os[0], reads[i]); // fwd and rev go into the same file
+							write_a_read(aligned_os[0], reads[i], opts.is_zip); // fwd and rev go into the same file
 						}
 					}
 					else if (opts.is_other) {
 						if (opts.is_out2) {
-							write_a_read(other_os[i], reads[i]);
+							write_a_read(other_os[i], reads[i], opts.is_zip);
 						}
 						else {
-							write_a_read(other_os[0], reads[i]); // fwd and rev go into the same file
+							write_a_read(other_os[0], reads[i], opts.is_zip); // fwd and rev go into the same file
 						}
 					}
 				}
@@ -736,10 +744,10 @@ void Output::report_fasta(Runopts & opts, std::vector<Read> & reads)
 			// the read was accepted - output
 			if (reads[0].is_hit)
 			{
-				write_a_read(aligned_os[0], reads[0]);
+				write_a_read(aligned_os[0], reads[0], opts.is_zip);
 			} //~if read was accepted
 			else if (opts.is_other) {
-				write_a_read(other_os[0], reads[0]);
+				write_a_read(other_os[0], reads[0], opts.is_zip);
 			}
 		}//~if not paired-in or paired-out
 	}//~if is_fastx 
@@ -969,11 +977,19 @@ void Output::writeLog(Runopts &opts, Refstats &refstats, Readstats &readstats)
 	log_os.close();
 } // ~Output::writeLog
 
-void Output::write_a_read(std::ofstream& strm, Read& read)
+void Output::write_a_read(std::ofstream& strm, Read& read, const bool is_zip)
 {
-	strm << read.header << std::endl << read.sequence << std::endl;
+	std::stringstream ss;
+	ss << read.header << std::endl << read.sequence << std::endl;
 	if (read.format == Format::FASTQ)
-		strm << '+' << std::endl << read.quality << std::endl;
+		ss << '+' << std::endl << read.quality << std::endl;
+
+	if (is_zip) {
+		gzip.reset_buffers();
+		gzip.zip_ss(ss, strm);
+	}
+	else
+		strm << ss.str();
 }
 
 std::string Summary::to_string(Runopts &opts, Refstats &refstats)

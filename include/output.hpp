@@ -38,6 +38,7 @@
 
 #include "common.hpp"
 #include "kvdb.hpp"
+#include "gzip.hpp"
 
 // forward
 struct Index;
@@ -94,6 +95,9 @@ public:
 	std::string otumap_f;
 	std::string biom_f;
 
+	// if '-zip' specified - compressing the output data.
+	Gzip gzip;
+
 	Summary summary;
 
 	Output(Runopts& opts, Readstats& readstats);
@@ -124,7 +128,7 @@ public:
 
 private:
 	void init(Runopts & opts, Readstats & readstats);
-	void write_a_read(std::ofstream& strm, Read& read);
+	void write_a_read(std::ofstream& strm, Read& read, const bool is_zip=false);
 
 }; // ~class Output
 
