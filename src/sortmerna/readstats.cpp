@@ -100,7 +100,8 @@ void Readstats::calculate(Runopts &opts)
 			bool isFastq = false;
 			bool isFasta = false;
 			uint64_t tcount = 0; // count of lines in a file
-			Gzip gzip(opts.is_gz);
+			Gzip gzip;
+			gzip.init(opts.is_gz, true);
 
 			auto t = std::chrono::high_resolution_clock::now();
 

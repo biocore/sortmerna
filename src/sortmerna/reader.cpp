@@ -21,7 +21,6 @@ Reader::Reader(std::string id, bool is_gzipped)
 	:
 	id(id),
 	is_gzipped(is_gzipped),
-	gzip(is_gzipped),
 	is_done(false),
 	read_count(0),
 	line_count(0),
@@ -29,7 +28,11 @@ Reader::Reader(std::string id, bool is_gzipped)
 	last_stat(0),
 	isFastq(false),
 	isFasta(false)
-{} // ~Reader::Reader
+{
+	if (is_gzipped) {
+		gzip.init(true, true);
+	}
+} // ~Reader::Reader
 
 Reader::~Reader() {}
 
@@ -49,7 +52,9 @@ bool Reader::loadReadByIdx(Runopts & opts, Read & read)
 		std::string line;
 		std::size_t read_num = 0;
 		bool isFastq = true;
-		Gzip gzip(opts.is_gz);
+		Gzip gzip;
+		if (opts.is_gz)
+			gzip.init(true, true);
 
 		auto t = std::chrono::high_resolution_clock::now();
 
